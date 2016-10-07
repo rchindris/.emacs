@@ -22,6 +22,9 @@
   (when (derived-mode-p 'prog-mode)
     (delete-trailing-whitespace)))
 
+;; Backup settings
+(setq backup-directory-alist '(("" . "~/.emacs.d/emacs-backup")))
+
 ;; Global Key bindings
 (global-set-key (kbd "C-<") 'beginning-of-buffer)
 (global-set-key (kbd "C->") 'end-of-buffer)
