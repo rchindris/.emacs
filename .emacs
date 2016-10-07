@@ -4,7 +4,7 @@
 (package-initialize)
 (unless package-archive-contents (package-refresh-contents))
 (setq install-packages-list
-      '(ggtags auto-complete yasnippet
+      '(ggtags auto-complete yasnippet counsel
 	       hc-zenburn-theme elpy ivy swiper magit magit-rockstar))
 (dolist (package install-packages-list)
   (unless (package-installed-p package)
@@ -32,13 +32,20 @@
 (global-set-key (kbd "C-s") 'swiper)
 (global-set-key (kbd "C-x C-f") 'counsel-find-file)
 (global-set-key (kbd "M-o") 'other-window)
+(global-set-key (kbd "C-v") 'scroll-up)
+(global-set-key (kbd "M-v") 'scroll-down)
+
 (defun new-line-below-current ()
     (interactive)
   (let (pos (point))
     (end-of-line)
     (newline-and-indent)))
 (global-set-key (kbd "<C-return>") 'new-line-below-current)
+
 (global-set-key (kbd "C-x g") 'magit-status)
+(global-set-key (kbd "C-c w") 'whitespace-mode)
+(global-set-key (kbd "C-c C-w C-t") 'tabify)
+(global-set-key (kbd "C-c C-w C-u") 'untabify)
 
 ;; Autocomplete setup
 (ac-config-default)
@@ -48,11 +55,14 @@
 (setq ivy-use-virtual-buffers t)
 
 ;; C/C++ packages setup
+(setq-default tab-width 4)
 (require 'ggtags)
 (add-hook 'c-mode-common-hook
 	  (lambda ()
 	    (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
 	      (ggtags-mode 1))))
+(setq c-default-style "linux")
+
 (define-key ggtags-mode-map (kbd "C-c g d") 'ggtags-find-other-symbol)
 (define-key ggtags-mode-map (kbd "C-c g r") 'ggtags-find-reference)
 (define-key ggtags-mode-map (kbd "C-c g f") 'ggtags-find-file)
