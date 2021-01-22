@@ -1,0 +1,272 @@
+#+TITLE: Emacs Configuration 
+#+DESCRIPTION: An org-babel based configuration file for Emacs
+
+
+* Startup and  UI configuration
+
+Set the default font and load a nice theme.
+
+#+BEGIN_SRC emacs-lisp
+(set-face-attribute 'default nil :font "Cascadia Code" :height 130)
+(use-package doom-themes
+:ensure t
+:config (load-theme 'doom-one t))
+#+END_SRC
+
+Use a nice mode line.
+
+#+BEGIN_SRC emacs-lisp
+(use-package doom-modeline
+:ensure t
+:config
+ (doom-modeline-mode 1)
+ (setq doom-modeline-project-detection 'projectile))
+#+END_SRC
+
+Enable line numbers when progmode.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'prog-mode-hook 'linum-mode)
+#+END_SRC
+
+Remove unwanted UI elements (menu/tool bars, etc)
+
+#+BEGIN_SRC emacs-lisp
+(setq inhibit-startup-screen t)
+;; (setq visible-bell 1)
+
+(scroll-bar-mode -1)
+(tool-bar-mode -1)
+(tooltip-mode -1)
+(menu-bar-mode -1)
+(set-fringe-mode 10)
+
+#+END_SRC
+
+Hack to set the correct PATH environment variable.
+#+BEGIN_SRC emacs-lisp
+(use-package exec-path-from-shell
+:ensure t
+:config
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize)))
+#+END_SRC
+
+
+* Desktop environment
+
+#+BEGIN_SRC emacs-lisp
+    (use-package exwm
+    :ensure t
+    )
+    (use-package helm-exwm
+    :ensure t
+    :config
+    (setq helm-exwm-emacs-buffers-source (helm-exwm-build-emacs-buffers-source))
+    (setq helm-exwm-source (helm-exwm-build-source))
+    (setq helm-mini-default-sources `(helm-exwm-emacs-buffers-source
+				      helm-exwm-source
+				      helm-source-recentf)))
+  (require 'exwm-config)
+
+  (setq exwm-workspace-number 4)
+
+  ;; (require 'exwm-randr)
+  ;; (setq exwm-randr-workspace-output-plist '(0 "VGA1"))
+  ;; (add-hook 'exwm-randr-screen-change-hook
+  ;;   (lambda ()
+  ;;     (start-process-shell-command
+  ;;      "xrandr" nil "xrandr --output VGA1 --left-of LVDS1 --auto")))
+  ;; (exwm-randr-enable)
+    ;; (require 'exwm-systemtray
+    ;; :ensure t
+    ;; :init
+    ;; (exwm-systemtray-enable))
+
+#+end_SRC
+
+* Global packages
+
+** Window switching..
+#+BEGIN_SRC emacs-lisp
+  (use-package ace-window
+  :ensure t
+  :bind ("M-o" . other-window))
+#+END_SRC
+
+** M-x, C-x C-f replacement using helm
+Because who wouldn't want this...
+#+BEGIN_SRC emacs-lisp
+(use-package which-key
+:ensure t
+:config
+(which-key-mode 1)
+(setq which-key-idle-delay 0.3))
+#+END_SRC
+
+Use helm. Not ivy.
+
+#+BEGIN_SRC emacs-lisp
+
+(use-package helm
+:ensure t
+:diminish helm-mode
+:init
+(setq helm-split-window-in-side-p           nil
+      helm-buffers-fuzzy-matching           t
+      helm-move-to-line-cycle-in-source     t
+      helm-ff-search-library-in-sexp        t
+      helm-ff-file-name-history-use-recentf t
+      helm-candidate-number-limit 100
+      helm-completing-read-handlers-alist '((describe-function) (describe-variable))
+      ;; From https://gist.github.com/antifuchs/9238468
+      helm-ipdle-delay 0.0 ; update fast sources immediately (doesn't).
+      helm-input-idle-delay 0.01  ; this actually updates things
+                                        ; reeeelatively quickly.
+					helm-yas-display-key-on-candidate t
+          helm-quick-update t
+          helm-M-x-requires-pattern nil
+          helm-ff-skip-boring-files t
+	  helm-position 'top
+helm-autoresize-mode 1)
+	  (helm-mode)
+  :bind 
+(
+("C-c h" . helm-mini)
+         ("C-h a" . helm-apropos)
+         ("C-x C-b" . helm-buffers-list)
+         ("C-x b" . helm-buffers-list)
+         ("C-x C-f" . helm-find-files)
+         ("C-x c o" . helm-occur)
+         ("C-x c s" . helm-swoop)
+         ("C-x c y" . helm-yas-complete)
+         ("C-x c Y" . helm-yas-create-snippet-on-region)
+         ("C-x c SPC" . helm-all-mark-rings)))
+(ido-mode -1) ;; Turn off ido mode in case I enabled it accidentally
+
+(use-package helm-ls-git
+:ensure t)
+
+(use-package helm-descbinds
+  :defer t
+  :ensure t
+  :bind (("C-h b" . helm-descbinds)
+         ("C-h w" . helm-descbinds)))
+#+END_SRC
+
+** Fuzzy search using swiper
+
+Use swiper on top of helm for fuzzy searching inside the buffers.
+
+#+BEGIN_SRC emacs-lisp
+(use-package swiper-helm
+:ensure t
+:bind ("C-s" . swiper))
+#+END_SRC
+
+** Global completion using company
+#+BEGIN_SRC emacs-lisp
+(use-package company
+:ensure t
+:config
+(global-company-mode 1)
+(setq company-dabbrev-downcase 0)
+(setq company-idle-delay 0))
+
+#+END_SRC
+
+** Project support using projectile & helm-projectile
+
+
+Use [[https://github.com/bbatsov/projectile][projectile]] for project management.
+
+#+BEGIN_SRC emacs-lisp
+(use-package projectile
+:ensure t
+:init
+(projectile-mode +1)
+:bind (:map projectile-mode-map
+("C-c p" . projectile-command-map)))
+
+(use-package helm-projectile
+:ensure t)
+
+
+
+#+END_SRC
+
+* Python
+
+** Utilities
+
+
+Use black for code formatting.
+
+#+BEGIN_SRC emacs-lisp
+(use-package python-black
+:ensure t
+:bind ("C-c f" . python-black-buffer)
+:config
+(python-black-on-save-mode 1))
+#+END_SRC
+
+** Language server and debugger
+
+
+#+BEGIN_SRC emacs-lisp
+(use-package lsp-pyright
+  :ensure t
+  :hook (python-mode . (lambda ()
+                          (require 'lsp-pyright)
+                          (lsp))))  ; or lsp-deferred
+(use-package dap-mode 
+:ensure t
+:bind 
+(("<f10>" . dap-next)
+("<f11>" . dap-step-in)
+("<f9>" . dap-breakpoint-toggle)
+("<f5>" . dap-debug)
+))
+
+(require 'dap-ui)
+(require 'dap-python)
+(dap-mode 1)
+(dap-ui-mode 1)
+#+END_SRC
+
+** Package management using poetry
+#+BEGIN_SRC emacs-lisp
+(use-package transient :ensure t)
+(use-package pyvenv :ensure t)
+(use-package poetry
+:ensure t
+:config
+(setq poetry-process "/home/radu/.poetry/bin/poetry")
+(poetry-tracking-mode))
+#+END_SRC
+
+* C++
+
+#+BEGIN_SRC emacs-lisp
+(use-package clang-format
+:ensure t)
+(add-hook
+     'c++-mode-hook
+      (lambda ()
+      (local-set-key (kbd "C-c C-f") 'clang-format-region)))
+
+#+END_SRC
+
+* Docker
+
+Manage docker from within Emacs.
+#+BEGIN_SRC emacs-lisp
+(use-package docker
+  :ensure t
+  :bind ("C-c d" . docker))
+#+END_SRC
+* Git
+#+BEGIN_SRC emacs-lisp
+(use-package magit
+:ensure t
+:bind ("C-x g" . magit))
+#+END_SRC
