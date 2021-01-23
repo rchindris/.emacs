@@ -54,33 +54,55 @@ Hack to set the correct PATH environment variable.
 
 * Desktop environment
 
+Remap frame related bindings
+
 #+BEGIN_SRC emacs-lisp
-    (use-package exwm
-    :ensure t
-    )
-    (use-package helm-exwm
-    :ensure t
-    :config
-    (setq helm-exwm-emacs-buffers-source (helm-exwm-build-emacs-buffers-source))
-    (setq helm-exwm-source (helm-exwm-build-source))
-    (setq helm-mini-default-sources `(helm-exwm-emacs-buffers-source
-				      helm-exwm-source
-				      helm-source-recentf)))
+(global-set-key (kbd "s-x n") 'make-frame-command)
+(global-set-key (kbd "s-x k") 'delete-frame)
+(global-set-key (kbd "s-x o") 'other-frame)
+#+END_SRC
+
+Emacs window manager configuration.
+
+#+BEGIN_SRC emacs-lisp
+  (require 'exwm)
   (require 'exwm-config)
+  (require 'exwm-systemtray)
+  (require 'exwm-randr)
+  (setq exwm-randr-workspace-output-plist '(0 "eDP-1" 1 "DP-3"))
+  (add-hook 'exwm-randr-screen-change-hook
+          (lambda ()
+            (start-process-shell-command
+             "xrandr" nil "xrandr --output HDMI-1 --mode 1920x1080 --pos 0x0 --rotate normal --output LVDS-1 --off --output VGA-1 --off")))
+(add-hook 'exwm-update-class-hook
+          (lambda ()
+          (exwm-workspace-rename-buffer exwm-class-name)))
+(exwm-randr-enable)
+(exwm-enable)
+(exwm-systemtray-enable)
 
-  (setq exwm-workspace-number 4)
 
-  ;; (require 'exwm-randr)
-  ;; (setq exwm-randr-workspace-output-plist '(0 "VGA1"))
-  ;; (add-hook 'exwm-randr-screen-change-hook
-  ;;   (lambda ()
-  ;;     (start-process-shell-command
-  ;;      "xrandr" nil "xrandr --output VGA1 --left-of LVDS1 --auto")))
-  ;; (exwm-randr-enable)
-    ;; (require 'exwm-systemtray
-    ;; :ensure t
-    ;; :init
-    ;; (exwm-systemtray-enable))
+    ;;   (use-package helm-exwm
+    ;;   :ensure t
+    ;;   :config
+    ;;   (setq helm-exwm-emacs-buffers-source (helm-exwm-build-emacs-buffers-source))
+    ;;   (setq helm-exwm-source (helm-exwm-build-source))
+    ;;   (setq helm-mini-default-sources `(helm-exwm-emacs-buffers-source
+    ;; 				      helm-exwm-source
+    ;; 				      helm-source-recentf)))
+    ;; (setq exwm-workspace-number 4)
+
+    ;; (require 'exwm-randr)
+    ;; (setq exwm-randr-workspace-output-plist '(0 "VGA1"))
+    ;; (add-hook 'exwm-randr-screen-change-hook
+    ;;   (lambda ()
+    ;;     (start-process-shell-command
+    ;;      "xrandr" nil "xrandr --output VGA1 --left-of LVDS1 --auto")))
+    ;; (exwm-randr-enable)
+      ;; (require 'exwm-systemtray
+      ;; :ensure t
+      ;; :init
+      ;; (exwm-systemtray-enable))
 
 #+end_SRC
 
@@ -90,7 +112,7 @@ Hack to set the correct PATH environment variable.
 #+BEGIN_SRC emacs-lisp
   (use-package ace-window
   :ensure t
-  :bind ("M-o" . other-window))
+  :bind ("M-o" . ace-window))
 #+END_SRC
 
 ** M-x, C-x C-f replacement using helm
