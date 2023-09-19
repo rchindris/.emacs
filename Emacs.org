@@ -1,0 +1,536 @@
+* Package sources
+  
+  Configure *package.el*:
+  
+  #+begin_src elisp
+    ;; Initialize package sources
+    (require 'package)
+
+    (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+			     ("org" . "https://orgmode.org/elpa/")))
+
+    (package-initialize)
+    (unless package-archive-contents
+      (package-refresh-contents))
+
+    ;; Initialize use-package on non-Linux platforms
+    (unless (package-installed-p 'use-package)
+      (package-install 'use-package))
+
+    (require 'use-package)
+    (setq use-package-always-ensure t)
+  #+end_src
+
+* Startup and performance
+  
+  Set the environment path.
+  
+  #+begin_src elisp
+    (use-package exec-path-from-shell)
+    (exec-path-from-shell-initialize)
+  #+end_src
+  
+  #+begin_src elisp
+    ;; The default is 800 kilobytes.  Measured in bytes.
+    (setq gc-cons-threshold (* 50 1000 1000))
+
+    (defun efs/display-startup-time ()
+      (message "Emacs loaded in %s with %d garbage collections."
+	       (format "%.2f seconds"
+		       (float-time
+			(time-subtract after-init-time before-init-time)))
+	       gcs-done))
+
+    (add-hook 'emacs-startup-hook #'efs/display-startup-time)
+  #+end_src
+  
+* File system
+
+  Keep folders clean
+
+  #+begin_src elisp
+    (use-package no-littering)
+    (setq auto-save-file-name-transforms
+	  `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
+  #+end_src
+
+  Revert buffers when the underlying file has changed
+   
+  #+begin_src elisp
+    (global-auto-revert-mode 1)
+  #+end_src
+
+* Persist state
+
+  Remember the recently edited files, bind =C-x r= to =recentf-open-files=:
+
+  #+begin_src elisp
+    (recentf-mode 1)
+    (global-set-key (kbd "C-x r") 'recentf-open-files)
+  #+end_src
+
+  Enable =savehist-mode=:
+  
+  #+begin_src elisp
+    (setq history-length 25)
+    (savehist-mode 1)
+  #+end_src
+
+  Use =save-place-mode=:
+  
+  #+begin_src elisp
+    (save-place-mode 1)
+  #+end_src
+
+  Move customization variables to a separate file and load it:
+  
+  #+begin_src elisp
+    (setq custom-file (locate-user-emacs-file "custom-vars.el"))
+    (load custom-file 'noerror 'nomessage)
+  #+end_src
+  
+*
+User interface configuration
+
+  Inhibit the statup screen, hide menubar and toolbar.
+  
+  #+begin_src elisp
+    (setq inhibit-startup-message t)
+    (tool-bar-mode -1)
+    (menu-bar-mode -1)
+  #+end_src
+
+  Prevent using UI dialogs for prompts:
+  
+  #+begin_src elisp
+    (setq use-dialog-box nil)
+  #+end_src
+
+  Disable the annoying audibe bell
+
+  #+begin_src elisp
+    (setq visible-bell t)
+  #+end_src
+
+  Start maximized.
+
+  #+begin_src elisp
+      (toggle-frame-fullscreen)
+  #+end_src
+
+  Highlight current line and show line numbers:
+
+  #+begin_src elisp
+    (global-hl-line-mode t)
+    (global-display-line-numbers-mode t)
+  #+end_src
+  
+  Sort apropos results by relevancy.
+ 
+  #+begin_src elisp
+    (setq apropos-sort-by-scores t)
+  #+end_src
+
+  Map apropos-library to =C-h l=.
+ 
+  #+begin_src elisp
+    (global-set-key (kbd "C-h l") 'apropos-library)
+  #+end_src
+
+  Window management.
+
+  #+begin_src elisp
+    (global-set-key (kbd "M-o") 'other-window)
+    (windmove-default-keybindings)
+  #+end_src
+
+  Persist window layouts with =eyebrowse=.
+
+  #+begin_src elisp
+    (use-package eyebrowse)
+    (eyebrowse-mode 1)
+    (desktop-save-mode 1)
+  #+end_src  
+
+  Use the =modus-themes=.
+  #+begin_src elisp
+	(use-package emacs
+	  :init
+	     (setq modus-themes-italic-constructs t
+		  modus-themes-bold-constructs t
+		  modus-themes-region '(bg-only no-extend)
+		  modus-themes-syntax '(alt-syntax green-strings yellow-comments)
+		  modus-themes-mode-line '(moody accented 3d borderless))
+	     :config
+	  ;; Load the theme of your choice:
+	  (load-theme 'solarized-selenized-white) ;; OR (load-theme 'modus-vivendi)
+	  :bind ("<f5>" . modus-themes-toggle)
+	  )
+  #+end_src
+
+* Movement
+
+  Enable subword movement for camelCase.
+
+  #+begin_src elisp
+    (global-subword-mode 1)
+  #+end_src
+
+  Use =multiple-cursors=:
+  
+  #+begin_src elisp
+    (use-package multiple-cursors
+      :bind (("C-S->" . mc/edit-lines)
+	     ("C->" . mc/mark-next-like-this)
+	     ("C-<" . mc/mark-previous-like-this)
+	     ("C-c C->" . mc/mark-all-like-this)))
+  #+end_src
+
+* Ido, Ivy and other completion stuff
+
+  Which key shows possible continuations for a key sequence.
+  
+  #+begin_src elisp
+    (use-package which-key
+      :config
+      (which-key-mode))
+  #+end_src
+
+  Enable *ido* everywhere and set some useful variables:
+
+  #+begin_src elisp
+    (setq ido-enable-flex-matching t)
+    (setq ido-everywhere t)
+    (setq ido-use-filename-at-point 'guess)
+    (ido-mode 1)
+  #+end_src
+
+  Use =company= for intelisense-like autocompletion.
+
+  #+begin_src elisp
+    (use-package company
+      :config (global-company-mode))
+    (global-set-key (kbd "C-.") 'company-complete-common)
+  #+end_src
+
+  Install and configure =yasnippet=
+
+  #+begin_src elisp
+    (use-package yasnippet
+      :ensure t
+      :config
+      (use-package yasnippet-snippets
+	:ensure t)
+      (yas-global-mode t)
+      (define-key yas-minor-mode-map (kbd "<tab>") nil)
+      (define-key yas-minor-mode-map (kbd "C-'") 'yas-expand)
+      (add-to-list 'yas-snippet-dirs "~/.emacs.d/snippets")
+      (yas-reload-all)
+      (setq yas-prompt-functions '(yas-ido-prompt))
+      (defun help/yas-after-exit-snippet-hook-fn ()
+	(prettify-symbols-mode)
+	(prettify-symbols-mode))
+      (add-hook 'yas-after-exit-snippet-hook #'help/yas-after-exit-snippet-hook-fn)
+      :diminish yas-minor-mode)
+  #+end_src
+
+  Add =yasnippet= as as a company backend.
+
+  #+begin_src elisp
+    (defun mars/company-backend-with-yas (backends)
+      "Add :with company-yasnippet to company BACKENDS.
+    Taken from https://github.com/syl20bnr/spacemacs/pull/179."
+      (if (and (listp backends) (memq 'company-yasnippet backends))
+	  backends
+	(append (if (consp backends)
+		    backends
+		  (list backends))
+		'(:with company-yasnippet))))
+
+    ;; add yasnippet to all backends
+    (setq company-backends
+	  (mapcar #'mars/company-backend-with-yas company-backends))
+  #+end_src
+
+  Install =Ivy/counsel/swiper= for narrowing stuff.
+
+  #+begin_src elisp
+    (use-package ivy
+      :custom
+      (ivy-count-format "(%d/%d) ")
+      (ivy-use-virtual-buffers t)
+      :config (ivy-mode))
+    (use-package counsel
+      :after ivy
+      :config
+      (ivy-mode 1)
+      (counsel-mode 1))
+    (use-package swiper
+      :after ivy
+      :bind (("C-s" . swiper)
+	     ("C-r" . swiper)))
+  #+end_src
+  
+* Dired
+  Map =C-c d= to dired.
+
+  #+begin_src elisp
+    (global-set-key (kbd "C-c d f") 'dired-create-empty-file)
+    (global-set-key (kbd "C-c d d") 'dired-create-directory)
+  #+end_src
+  
+* Git
+
+  Use magit.
+  
+  #+begin_src elisp
+    (use-package magit
+      :bind (("C-x g" . magit-status)))
+  #+end_src
+  
+* Programming languages
+
+  Require LSP.
+  
+  #+begin_src elisp
+    (use-package lsp-mode
+      :init
+      (setq lsp-keymap-prefix "C-c l")
+      (setq lsp-log-io t)
+      :config
+      (lsp-enable-which-key-integration t)
+      :bind (("M-n" . flymake-goto-next-error)
+	     ("M-p" . flymake-goto-prev-error)
+	     ("C-c l r" . lsp-find-references)
+	     ("C-c l R" . lsp-rename)
+	     ("C-c l i" . lsp-find-implementation)
+	     ("C-c l t" . lsp-find-type-definition))
+      :commands lsp)
+
+    (use-package lsp-ui
+      :hook (lsp-mode . lsp-ui-mode)
+      :custom
+      (lsp-ui-doc-position 'bottom))
+    (use-package lsp-ivy
+      :after lsp)
+  #+end_src
+
+  Install =pylsp=
+
+  #+begin_src elisp
+    (use-package python
+      :hook (python-mode . lsp))
+    (use-package with-venv)
+    (use-package pyvenv)
+    (use-package poetry)
+  #+end_src
+
+  
+
+  Configure dap mode for python debugging.
+
+  #+begin_src elisp
+    (use-package dap-mode
+      :after lsp-mode
+      :commands dap-debug
+      :hook ((python-mode . dap-ui-mode) (python-mode . dap-mode))
+      :config
+      (require 'dap-python)
+      (setq dap-python-debugger 'debugpy)
+      (add-hook 'dap-stopped-hook
+		(lambda (arg) (call-interactively #'dap-hydra))))
+  #+end_src
+
+  Setup _dotnet_ development. Install csharp mode:
+
+  #+begin_src elisp
+    (use-package csharp-mode
+      :hook (csharp-mode . lsp))
+    (add-to-list 'auto-mode-alist '("\\.razor\\'" . csharp-mode))
+  #+end_src
+
+  Manage dotnet solutions:
+  
+  #+begin_src elisp
+    (use-package dotnet
+      :hook (csharp-mode . dotnet-mode))
+  #+end_src
+
+  Javascript and typescript.
+
+  #+begin_src elisp
+    (setq-default js2-use-font-lock-faces t
+		  js2-mode-must-byte-compile nil
+		  ;; {{ comment indention in modern frontend development
+		  javascript-indent-level 2
+		  js-indent-level 2
+		  css-indent-offset 2
+		  typescript-indent-level 2
+		  ;; }}
+		  js2-strict-trailing-comma-warning nil ; it's encouraged to use trailing comma in ES6
+		  js2-idle-timer-delay 0.5 ; NOT too big for real time syntax check
+		  js2-auto-indent-p nil
+		  js2-indent-on-enter-key nil ; annoying instead useful
+		  js2-skip-preprocessor-directives t
+		  js2-strict-inconsistent-return-warning nil ; return <=> return null
+		  js2-enter-indents-newline nil
+		  js2-bounce-indent-p t)
+
+    (with-eval-after-load 'js-mode
+      ;; '$' is part of variable name like '$item'
+      (modify-syntax-entry ?$ "w" js-mode-syntax-table))
+
+    ;; @see https://github.com/felipeochoa/rjsx-mode/issues/33
+    (with-eval-after-load 'rjsx-mode
+      (define-key rjsx-mode-map "<" nil))
+
+    ;; Latest rjsx-mode does not have indentation issue
+    ;; @see https://emacs.stackexchange.com/questions/33536/how-to-edit-jsx-react-files-in-emacs
+    (setq-default js2-additional-externs
+		  '("$"
+		    "$A" ; salesforce lightning component
+		    "$LightningApp" ; salesforce
+		    "AccessifyHTML5"
+		    "Blob"
+		    "FormData"
+		    "KeyEvent"
+		    "Raphael"
+		    "React"
+		    "URLSearchParams"
+		    "__dirname" ; Node
+		    "_content" ; Keysnail
+		    "after"
+		    "afterEach"
+		    "angular"
+		    "app"
+		    "assert"
+		    "assign"
+		    "before"
+		    "beforeEach"
+		    "browser"
+		    "by"
+		    "clearInterval"
+		    "clearTimeout"
+		    "command" ; Keysnail
+		    "content" ; Keysnail
+		    "decodeURI"
+		    "define"
+		    "describe"
+		    "display" ; Keysnail
+		    "documentRef"
+		    "element"
+		    "encodeURI"
+		    "expect"
+		    "ext" ; Keysnail
+		    "fetch"
+		    "gBrowser" ; Keysnail
+		    "global"
+		    "goDoCommand" ; Keysnail
+		    "hook" ; Keysnail
+		    "inject"
+		    "isDev"
+		    "it"
+		    "jest"
+		    "jQuery"
+		    "jasmine"
+		    "key" ; Keysnail
+		    "ko"
+		    "log"
+		    "mockStore"
+		    "module"
+		    "mountWithTheme"
+		    "plugins" ; Keysnail
+		    "process"
+		    "require"
+		    "setInterval"
+		    "setTimeout"
+		    "shell" ; Keysnail
+		    "tileTabs" ; Firefox addon
+		    "util" ; Keysnail
+		    "utag"))
+
+  #+end_src
+
+  Enable javascript evaluation in =org-mode=:
+
+  #+begin_src elisp
+    (require 'ob-js)
+
+    (add-to-list 'org-babel-load-languages '(js . t))
+    (org-babel-do-load-languages 'org-babel-load-languages org-babel-load-languages)
+    (add-to-list 'org-babel-tangle-lang-exts '("js" . "js"))
+  #+end_src
+  
+* Org mode and Org-roam
+
+  Prettify org:
+  
+  #+begin_src elisp
+    (use-package org-bullets
+      :init
+      (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+  #+end_src
+
+  Set a bell sound for the pomodoro timer:
+
+  #+begin_src emacs-lisp
+    (setq org-clock-sound "~/Music/bell.wav")
+  #+end_src
+
+  =Org-ref= is handy for referencing figures & other stuff in org files.
+  #+begin_src elisp
+    (use-package org-ref
+  :ensure t)
+  #+end_src
+
+  Use =org-roam= for keeping notes.
+  
+  #+begin_src elisp
+    (use-package org-roam
+      :ensure t
+      :init
+      (setq org-roam-v2-ack t)
+      :custom
+      (org-roam-directory "~/Archive")
+      :bind(
+	    ("C-c n l" . org-roam-buffer-toggle)
+	    ("C-c n i" . org-roam-node-insert)
+	    ("C-c n f" . org-roam-node-find))
+      :config
+      (org-roam-setup))
+  #+end_src
+
+  Use emacs for presenting stuff:
+
+  #+begin_src elisp
+    (use-package org-tree-slide
+      :custom
+      (org-image-actual-width nil))
+  #+end_src
+
+  To start presenting run =org-tree-slide-mode= & navigate with =C-<= and =C->=.
+  
+  Org agenda:
+  #+begin_src elisp
+    (define-key global-map "\C-cl" 'org-store-link)
+    (define-key global-map "\C-ca" 'org-agenda)
+    (setq org-log-done t)
+    (setq org-agenda-files (list "~/org/todo.org"))
+  #+end_src
+* Editing
+** Wrap
+
+#+begin_src elisp
+  (use-package wrap-region
+    :config (wrap-region-global-mode t))
+#+end_src
+
+** READMEs
+  Use [[https://github.com/jrblevin/markdown-mode][markdown mode]] for editing readme files.
+  
+  #+begin_src elisp
+  (use-package markdown-mode
+  :ensure t
+  :mode ("README\\.md\\'" . gfm-mode)
+  :init (setq markdown-command "multimarkdown"))
+#+end_src
