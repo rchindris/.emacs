@@ -150,22 +150,24 @@ User interface configuration
     (use-package eyebrowse)
     (eyebrowse-mode 1)
     (desktop-save-mode 1)
-  #+end_src  
+  #+end_src
+
 
   Use the =modus-themes=.
   #+begin_src elisp
-	(use-package emacs
-	  :init
-	     (setq modus-themes-italic-constructs t
-		  modus-themes-bold-constructs t
-		  modus-themes-region '(bg-only no-extend)
-		  modus-themes-syntax '(alt-syntax green-strings yellow-comments)
-		  modus-themes-mode-line '(moody accented 3d borderless))
-	     :config
-	  ;; Load the theme of your choice:
-	  (load-theme 'solarized-selenized-white) ;; OR (load-theme 'modus-vivendi)
-	  :bind ("<f5>" . modus-themes-toggle)
-	  )
+    (use-package emacs
+      :init
+	 (setq modus-themes-italic-constructs t
+	      modus-themes-bold-constructs t
+	      modus-themes-region '(bg-only no-extend)
+	      modus-themes-syntax '(alt-syntax green-strings yellow-comments)
+	      modus-themes-mode-line '(moody accented 3d borderless))
+	 :config
+      ;; Load the theme of your choice:
+      (load-theme ' tsdh-dark) ;; OR (load-theme 'modus-vivendi)
+      (set-frame-font "Fira Code 14" nil t)
+      :bind ("<f5>" . modus-themes-toggle)
+      )
   #+end_src
 
 * Movement
@@ -471,12 +473,6 @@ User interface configuration
       (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
   #+end_src
 
-  Set a bell sound for the pomodoro timer:
-
-  #+begin_src emacs-lisp
-    (setq org-clock-sound "~/Music/bell.wav")
-  #+end_src
-
   =Org-ref= is handy for referencing figures & other stuff in org files.
   #+begin_src elisp
     (use-package org-ref
@@ -491,7 +487,7 @@ User interface configuration
       :init
       (setq org-roam-v2-ack t)
       :custom
-      (org-roam-directory "~/Archive")
+      (org-roam-directory "~/Notes")
       :bind(
 	    ("C-c n l" . org-roam-buffer-toggle)
 	    ("C-c n i" . org-roam-node-insert)
@@ -533,4 +529,17 @@ User interface configuration
   :ensure t
   :mode ("README\\.md\\'" . gfm-mode)
   :init (setq markdown-command "multimarkdown"))
-#+end_src
+  #+end_src
+
+** Gramarly
+
+  Use the =gramarly= plugin for =flymake=.
+
+  #+begin_src elisp
+    (use-package flymake-grammarly
+      :config
+      (add-hook 'text-mode-hook 'flymake-grammarly-load)
+      (add-hook 'latex-mode-hook 'flymake-grammarly-load)
+      (add-hook 'org-mode-hook 'flymake-grammarly-load)
+      (add-hook 'markdown-mode-hook 'flymake-grammarly-load))
+  #+end_src
